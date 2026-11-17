@@ -1,1 +1,175 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>برنامج المبيعات</title>
+    <style>
+        body { font-family: Tahoma, sans-serif; background-color: #f4f4f9; margin: 0; padding: 15px; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h2, h3 { color: #333; text-align: center; }
+        .form-group { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        input, select { padding: 10px; border: 1px solid #ccc; border-radius: 5px; flex: 1; box-sizing: border-box; }
+        button { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #218838; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background: #007bff; color: white; }
+        .delete-btn { background: #dc3545; padding: 5px 10px; font-size: 12px; }
+        .total { font-size: 18px; font-weight: bold; color: #007bff; text-align: left; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🛒 نظام إدارة المبيعات</h2>
+        
+        <h3>إضافة منتج جديد</h3>
+        <div class="form-group">
+            <input type="text" id="pName" placeholder="اسم المنتج">
+            <input type="number" id="pPrice" placeholder="السعر">
+            <input type="number" id="pQty" placeholder="الكمية">
+            <button onclick="addProduct()">إضافة للمخزن</button>
+        </div>
 
+        <h3>المنتجات المتاحة</h3>
+        <table id="productsTable">
+            <thead>
+                <tr>
+                    <th>الاسم</th>
+                    <th>السعر</th>
+                    <th>الكمية</th>
+                    <th>إجراء</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <h3 style="margin-top: 30px;">فاتورة البيع</h3>
+        <div class="form-group">
+            <select id="sellProduct"></select>
+            <input type="number" id="sellQty" placeholder="الكمية المطلوبة">
+            <button onclick="sellProduct()" style="background: #007bff;">إضافة للفاتورة</button>
+        </div>
+
+        <table id="invoiceTable">
+            <thead>
+                <tr>
+                    <th>المنتج</th>
+                    <th>السعر</th>
+                    <th>الكمية</th>
+                    <th>الإجمالي</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <div class="total" id="totalDisplay">الإجمالي: 0.00</div>
+        <br>
+        <button onclick="checkout()" style="width: 100%; background: #ff9800;">إتمام البيع وخصم من المخزون</button>
+    </div>
+
+    <script>
+        let products = JSON.parse(localStorage.getItem('products')) || [];
+        let invoice = [];
+
+        function saveData() {
+            localStorage.setItem('products', JSON.stringify(products));
+        }
+
+        function addProduct() {
+            const name = document.getElementById('pName').value;
+            const price = parseFloat(document.getElementById('pPrice').value);
+            const qty = parseInt(document.getElementById('pQty').value);
+
+            if (!name || isNaN(price) || isNaN(qty)) return alert('يرجى ملء جميع الحقول بشكل صحيح');
+
+            products.push({ id: Date.now(), name, price, qty });
+            saveData();
+            renderProducts();
+            document.getElementById('pName').value = '';
+            document.getElementById('pPrice').value = '';
+            document.getElementById('pQty').value = '';
+        }
+
+        function deleteProduct(id) {
+            if(confirm('هل أنت متأكد من الحذف؟')) {
+                products = products.filter(p => p.id !== id);
+                saveData();
+                renderProducts();
+            }
+        }
+
+        function renderProducts() {
+            const tbody = document.querySelector('#productsTable tbody');
+            const select = document.getElementById('sellProduct');
+            tbody.innerHTML = '';
+            select.innerHTML = '<option value="">اختر منتجاً...</option>';
+
+            products.forEach(p => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${p.name}</td>
+                        <td>${p.price.toFixed(2)}</td>
+                        <td>${p.qty}</td>
+                        <td><button class="delete-btn" onclick="deleteProduct(${p.id})">حذف</button></td>
+                    </tr>
+                `;
+                if (p.qty > 0) {
+                    select.innerHTML += `<option value="${p.id}">${p.name} - (${p.price})</option>`;
+                }
+            });
+        }
+
+        function sellProduct() {
+            const prodId = parseInt(document.getElementById('sellProduct').value);
+            const qty = parseInt(document.getElementById('sellQty').value);
+            
+            if (!prodId || isNaN(qty) || qty <= 0) return alert('اختر منتجاً وكمية صحيحة');
+
+            const product = products.find(p => p.id === prodId);
+            const alreadyInInvoice = invoice.filter(i => i.id === prodId).reduce((sum, i) => sum + i.qty, 0);
+            
+            if (qty + alreadyInInvoice > product.qty) return alert('الكمية غير متوفرة في المخزن!');
+
+            invoice.push({ name: product.name, price: product.price, qty: qty, id: product.id });
+            renderInvoice();
+            document.getElementById('sellQty').value = '';
+        }
+
+        function renderInvoice() {
+            const tbody = document.querySelector('#invoiceTable tbody');
+            tbody.innerHTML = '';
+            let total = 0;
+            invoice.forEach(item => {
+                const itemTotal = item.price * item.qty;
+                total += itemTotal;
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${item.name}</td>
+                        <td>${item.price.toFixed(2)}</td>
+                        <td>${item.qty}</td>
+                        <td>${itemTotal.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('totalDisplay').innerText = `الإجمالي: ${total.toFixed(2)}`;
+        }
+
+        function checkout() {
+            if (invoice.length === 0) return alert('الفاتورة فارغة');
+            
+            invoice.forEach(item => {
+                const product = products.find(p => p.id === item.id);
+                product.qty -= item.qty;
+            });
+
+            saveData();
+            invoice = [];
+            renderProducts();
+            renderInvoice();
+            alert('تمت عملية البيع بنجاح وخصم الكميات من المخزن!');
+        }
+
+        renderProducts();
+    </script>
+</body>
+</html>
