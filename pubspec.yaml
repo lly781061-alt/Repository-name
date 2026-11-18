@@ -1,16 +1,27 @@
-name: sales_app
-description: A new Flutter project.
-publish_to: 'none'
-version: 1.0.0+1
-
-environment:
-  sdk: '>=3.0.0 <4.0.0'
-
-dependencies:
-  flutter:
-    sdk: flutter
-  shared_preferences: ^2.2.2 # مكتبة حفظ البيانات
-  google_fonts: ^6.1.0        # مكتبة الخطوط العربية
-
-flutter:
-  uses-material-design: true
+sunbulah_app/
+├─ lib/
+│  ├─ main.dart
+│  ├─ theme/app_theme.dart
+│  ├─ database/local_db.dart
+│  ├─ services/
+│  │  ├─ backup_service.dart
+│  │  ├─ drive_service.dart
+│  │  ├─ sync_service.dart
+│  │  ├─ printer_service.dart
+│  │  ├─ barcode_service.dart
+│  │  └─ settings_service.dart
+│  ├─ models/
+│  │  ├─ sale.dart
+│  │  ├─ product.dart
+│  │  ├─ debt.dart
+│  │  ├─ rental.dart
+│  │  └─ category.dart
+│  └─ screens/
+│     ├─ home_screen.dart
+│     ├─ sales_screen.dart
+│     ├─ inventory_screen.dart
+│     ├─ debts_screen.dart
+│     ├─ rentals_screen.dart
+│     ├─ reports_screen.dart
+│     └─ settings_screen.dart
+└─ pubspec.yaml
