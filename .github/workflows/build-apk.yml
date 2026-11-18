@@ -13,8 +13,14 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.19.0'
+      # 1. إنشاء الهيكل الأساسي للمشروع (سيولد مجلد android تلقائياً)
+      - name: Create Flutter project structure
+        run: flutter create --project-name sales_app --org com.example .
+      # 2. جلب الحزم
       - run: flutter pub get
+      # 3. بناء ملف APK
       - run: flutter build apk --release
+      # 4. رفع الملف
       - uses: actions/upload-artifact@v4
         with:
           name: Sales-App-APK
