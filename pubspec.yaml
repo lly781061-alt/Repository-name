@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  shared_preferences: ^2.2.2 # مكتبة حفظ البيانات
+  google_fonts: ^6.1.0        # مكتبة الخطوط العربية
 
 flutter:
   uses-material-design: true
