@@ -29,6 +29,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Refresh Android Gradle project
+        run: flutter create . --platforms=android --org com.sunbula.store
+
       - name: Build APK Release
         run: flutter build apk --release
 
