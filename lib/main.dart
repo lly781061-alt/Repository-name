@@ -1,6 +1,7 @@
-import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:path_provider/path_provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
@@ -55,6 +56,9 @@ class _SunbulaWebViewPageState extends State<SunbulaWebViewPage> {
             }
           },
           onWebResourceError: (error) {
+            if (error.errorCode == -10 || error.description.contains('ERR_CACHE_MISS')) {
+              return;
+            }
             if (mounted) {
               setState(() {
                 _isLoading = false;
@@ -80,12 +84,10 @@ class _SunbulaWebViewPageState extends State<SunbulaWebViewPage> {
   Future<void> _loadLocalHtml() async {
     try {
       final htmlContent = await rootBundle.loadString('index.html');
-      final uri = Uri.dataFromString(
-        htmlContent,
-        mimeType: 'text/html',
-        encoding: utf8,
-      );
-      await _controller.loadRequest(uri);
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/sunbula_index.html');
+      await file.writeAsString(htmlContent, flush: true);
+      await _controller.loadFile(file.path);
     } catch (e) {
       if (mounted) {
         setState(() {
