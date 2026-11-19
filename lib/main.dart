@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,7 +41,8 @@ class _SunbulaWebViewPageState extends State<SunbulaWebViewPage> {
   @override
   void initState() {
     super.initState();
-    _controller = WebViewController()
+
+    final controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0xFFF4F6F8))
       ..setNavigationDelegate(
@@ -62,6 +64,16 @@ class _SunbulaWebViewPageState extends State<SunbulaWebViewPage> {
           },
         ),
       );
+
+    if (controller.platform is AndroidWebViewController) {
+      final androidController = controller.platform as AndroidWebViewController;
+      androidController.setMediaPlaybackRequiresUserGesture(false);
+      androidController.setOnShowFileSelector((params) async {
+        return [];
+      });
+    }
+
+    _controller = controller;
     _loadLocalHtml();
   }
 
