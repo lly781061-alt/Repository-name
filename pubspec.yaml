@@ -1,7 +1,7 @@
 name: sunbula_app
-description: Sunbula store management WebView app.
+description: تطبيق محل الكهربائيات والإنشائيات - السنبلة
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.2+3
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -9,10 +9,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  webview_flutter: 4.8.0
-  path_provider: ^2.1.2
+  webview_flutter: ^4.10.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
 
 flutter:
   uses-material-design: true
-  assets:
-    - index.html
