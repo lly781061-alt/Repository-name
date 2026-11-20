@@ -28,6 +28,18 @@ jobs:
       - name: Ensure Android project files
         run: flutter create --platforms=android .
 
+      - name: Update Android Gradle Plugin version
+        run: |
+          python3 -c '
+          import glob, re
+          for path in glob.glob("android/settings.gradle*"):
+              with open(path, "r", encoding="utf-8") as f:
+                  content = f.read()
+              updated = re.sub(r"(com\.android\.application[\"'\'']?\s*version\s*[\"'\''])[^\"'\'']+", r"\g<1>8.5.0", content)
+              with open(path, "w", encoding="utf-8") as f:
+                  f.write(updated)
+          '
+
       - name: Install dependencies
         run: flutter pub get
 
