@@ -1,250 +1,349 @@
-<!-- بداية قسم المزامنة السحابية وتصدير/استيراد ملفات النسخ الاحتياطي لتطبيق السنبلة -->
-<div id="sunbula-sync-and-file-panel" dir="rtl" style="margin:14px 0;padding:12px;border:1px solid #d0d7de;border-radius:10px;background:#f8fafc;font-family:inherit;">
-  <div style="font-weight:700;margin-bottom:8px;">☁️ مزامنة السنبلة ونقل النسخ الاحتياطية</div>
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>السنبلة — إدارة المتجر والمزامنة</title>
+  <style>
+    * { box-sizing: border-box; font-family: Tahoma, Arial, sans-serif; }
+    body { margin: 0; padding: 14px; background: #f1f5f9; color: #0f172a; }
+    .app-header {
+      background: #0f172a; color: #ffffff; padding: 14px 16px;
+      border-radius: 12px; margin-bottom: 14px;
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+    }
+    .app-title { font-size: 18px; font-weight: bold; }
+    .app-sub { font-size: 12px; color: #cbd5e1; }
+    .card {
+      background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px;
+      padding: 14px; margin-bottom: 14px;
+    }
+    .card-title { font-size: 15px; font-weight: bold; margin-bottom: 10px; color: #1e293b; }
+    .field-group { margin-bottom: 10px; }
+    label { display: block; font-size: 13px; margin-bottom: 4px; color: #334155; font-weight: bold; }
+    input[type="text"], input[type="email"] {
+      width: 100%; padding: 9px 11px; border: 1px solid #94a3b8;
+      border-radius: 8px; font-size: 13px; background: #ffffff; color: #0f172a;
+      direction: ltr; text-align: left;
+    }
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    button {
+      padding: 9px 13px; border: 0; border-radius: 8px;
+      font-size: 13px; font-weight: bold; cursor: pointer; color: #ffffff;
+    }
+    .btn-save { background: #1d4ed8; }
+    .btn-pull { background: #0f766e; }
+    .btn-export { background: #334155; }
+    .btn-import { background: #0369a1; }
+    .status-box {
+      margin-top: 10px; padding: 9px 11px; border-radius: 8px;
+      background: #f8fafc; border: 1px solid #e2e8f0; font-size: 13px; color: #334155;
+    }
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px;
+    }
+    .stat-box {
+      background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+      padding: 8px; text-align: center;
+    }
+    .stat-num { font-size: 16px; font-weight: bold; color: #0f172a; }
+    .stat-lbl { font-size: 11px; color: #64748b; }
+  </style>
+</head>
+<body>
 
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-    <button type="button" id="sunbulaBtnPushSync" onclick="sunbulaSyncAction('push')" style="padding:8px 12px;border-radius:8px;border:0;background:#1d4ed8;color:#fff;cursor:pointer;">
-      💾 حفظ المزامنة
-    </button>
-    <button type="button" id="sunbulaBtnPullSync" onclick="sunbulaSyncAction('pull')" style="padding:8px 12px;border-radius:8px;border:0;background:#0f766e;color:#fff;cursor:pointer;">
-      🔄 سحب الآن للهاتف
-    </button>
-    <button type="button" id="sunbulaBtnExportJson" onclick="sunbulaExportBackupFile()" style="padding:8px 12px;border-radius:8px;border:0;background:#334155;color:#fff;cursor:pointer;">
-      📤 تصدير ملف نسخة
-    </button>
-    <button type="button" id="sunbulaBtnImportJson" onclick="document.getElementById('sunbulaImportFileInput').click()" style="padding:8px 12px;border-radius:8px;border:0;background:#0369a1;color:#fff;cursor:pointer;">
-      📥 استيراد ملف نسخة
-    </button>
-    <input type="file" id="sunbulaImportFileInput" accept=".json,application/json" style="display:none" onchange="sunbulaImportBackupFile(event)" />
+  <div class="app-header">
+    <div>
+      <div class="app-title">السنبلة</div>
+      <div class="app-sub">نظام إدارة المتجر والمزامنة والنسخ الاحتياطي</div>
+    </div>
+    <div id="sunbulaOriginBadge" class="app-sub"></div>
   </div>
 
-  <div id="sunbulaSyncStatusText" style="font-size:13px;color:#334155;">
-    الحالة: جاهز — يمكنك المزامنة أو التصدير/الاستيراد بملف JSON.
+  <div class="card">
+    <div class="card-title">ملخص البيانات المحلية على الجهاز</div>
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div id="statItemsCount" class="stat-num">0</div>
+        <div class="stat-lbl">أصناف</div>
+      </div>
+      <div class="stat-box">
+        <div id="statDebtsCount" class="stat-num">0</div>
+        <div class="stat-lbl">ديون</div>
+      </div>
+      <div class="stat-box">
+        <div id="statRentalsCount" class="stat-num">0</div>
+        <div class="stat-lbl">إيجار</div>
+      </div>
+    </div>
   </div>
-</div>
 
-<script>
-(function () {
-  if (window.__SUNBULA_SYNC_PATCH_LOADED__) return;
-  window.__SUNBULA_SYNC_PATCH_LOADED__ = true;
+  <div class="card" id="settings">
+    <div class="card-title">☁️ مزامنة السنبلة ونقل النسخ الاحتياطية</div>
 
-  const URL_KEYS = ['sunbula_cloud_sync_url_v1', 'sunbula_sync_url', 'sync_url'];
-  const EMAIL_KEYS = ['sunbula_drive_email_v1', 'sunbula_email', 'drive_email'];
-  const STATE_KEY = 'sunbula_app_state_v1';
+    <div class="field-group">
+      <label for="driveEmail">البريد الإلكتروني</label>
+      <input type="email" id="driveEmail" placeholder="example@gmail.com" />
+    </div>
 
-  // نقل اللوحة تلقائياً إلى قسم الإعدادات إذا وُجد لتبدو جزءاً طبيعياً من الإعدادات
-  function mountPanelInSettings() {
-    const panel = document.getElementById('sunbula-sync-and-file-panel');
-    if (!panel) return;
-    const settingsContainer =
-      document.querySelector('#settings, [data-page="settings"], [data-tab="settings"], .settings-page, .settings-section');
-    if (settingsContainer && !settingsContainer.contains(panel)) {
-      settingsContainer.appendChild(panel);
-    }
-  }
+    <div class="field-group">
+      <label for="syncUrl">رابط المزامنة السحابية المشترك بين الهاتفين (/exec)</label>
+      <input type="text" id="syncUrl" placeholder="https://script.google.com/macros/s/.../exec" />
+    </div>
 
-  function setStatus(msg, isError) {
-    const el = document.getElementById('sunbulaSyncStatusText');
-    if (el) {
-      el.textContent = msg;
-      el.style.color = isError ? '#b91c1c' : '#0f766e';
-    }
-  }
+    <div class="btn-row">
+      <button type="button" class="btn-save" id="sunbulaBtnPushSync" onclick="sunbulaSyncAction('push')">
+        💾 حفظ المزامنة
+      </button>
+      <button type="button" class="btn-pull" id="sunbulaBtnPullSync" onclick="sunbulaSyncAction('pull')">
+        🔄 سحب الآن للهاتف
+      </button>
+      <button type="button" class="btn-export" id="sunbulaBtnExportJson" onclick="sunbulaExportBackupFile()">
+        📤 تصدير ملف نسخة
+      </button>
+      <button type="button" class="btn-import" id="sunbulaBtnImportJson" onclick="document.getElementById('sunbulaImportFileInput').click()">
+        📥 استيراد ملف نسخة
+      </button>
+      <input type="file" id="sunbulaImportFileInput" accept=".json,application/json" style="display:none" onchange="sunbulaImportBackupFile(event)" />
+    </div>
 
-  function cleanUrl(raw) {
-    return String(raw || '').trim().replace(/^[\[\("'`\s]+|[\]\)"'`\s]+$/g, '');
-  }
+    <div id="sunbulaSyncStatusText" class="status-box">
+      الحالة: جاهز — يمكنك المزامنة أو التصدير/الاستيراد بملف JSON.
+    </div>
+  </div>
 
-  function getSyncUrl() {
-    const input = document.querySelector('[data-sync-url], #syncUrl, #sync-url, input[placeholder*="/exec"]');
-    if (input && input.value && input.value.trim()) {
-      const cleaned = cleanUrl(input.value);
-      URL_KEYS.forEach((k) => localStorage.setItem(k, cleaned));
-      return cleaned;
-    }
-    for (const k of URL_KEYS) {
-      const v = cleanUrl(localStorage.getItem(k));
-      if (v) return v;
-    }
-    return '';
-  }
+  <script>
+  (function () {
+    const URL_KEYS = ['sunbula_cloud_sync_url_v1', 'sunbula_sync_url', 'sync_url'];
+    const EMAIL_KEYS = ['sunbula_drive_email_v1', 'sunbula_email', 'drive_email'];
+    const STATE_KEY = 'sunbula_app_state_v1';
 
-  function getSyncEmail() {
-    const input = document.querySelector('[data-sync-email], #driveEmail, #drive-email, input[type="email"]');
-    if (input && input.value && input.value.trim()) {
-      const email = input.value.trim().toLowerCase();
-      EMAIL_KEYS.forEach((k) => localStorage.setItem(k, email));
-      return email;
-    }
-    for (const k of EMAIL_KEYS) {
-      const v = (localStorage.getItem(k) || '').trim().toLowerCase();
-      if (v) return v;
-    }
-    return '';
-  }
-
-  function collectState() {
-    const direct = localStorage.getItem(STATE_KEY);
-    if (direct) {
-      try {
-        return JSON.parse(direct);
-      } catch (_) {}
-    }
-    const bag = {};
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (!key) continue;
-      if (key.startsWith('__') || key.includes('sync_url')) continue;
-      bag[key] = localStorage.getItem(key);
-    }
-    return bag;
-  }
-
-  function applyState(stateObj) {
-    if (!stateObj || typeof stateObj !== 'object') return false;
-    const source =
-      stateObj.__fullLocalStorage && typeof stateObj.__fullLocalStorage === 'object'
-        ? stateObj.__fullLocalStorage
-        : stateObj;
-
-    Object.keys(source).forEach((key) => {
-      const val = source[key];
-      localStorage.setItem(key, typeof val === 'string' ? val : JSON.stringify(val));
-    });
-    return true;
-  }
-
-  // إرسال البيانات بصيغة text/plain مع no-cors لتفادي حظر preflight من file://
-  async function pushToCloud() {
-    const url = getSyncUrl();
-    const email = getSyncEmail();
-
-    if (!url || !url.includes('/exec')) {
-      setStatus('يرجى إدخال رابط المزامنة الصحيح الذي ينتهي بـ /exec أولاً.', true);
-      alert('يرجى التأكد من لصق رابط المزامنة الصحيح الذي ينتهي بـ /exec.');
-      return false;
-    }
-    if (!email) {
-      setStatus('يرجى إدخال البريد الإلكتروني أولاً قبل حفظ المزامنة.', true);
-      alert('يرجى إدخال البريد الإلكتروني الخاص بحسابك أولاً.');
-      return false;
+    function cleanUrl(raw) {
+      return String(raw || '').trim().replace(/^[\[\("'`\s]+|[\]\)"'`\s]+$/g, '');
     }
 
-    setStatus('جاري إرسال البيانات إلى السحابة...', false);
-    const payload = {
-      email: email,
-      updatedAt: Date.now(),
-      state: { __fullLocalStorage: collectState() }
-    };
+    function setStatus(msg, isError) {
+      const el = document.getElementById('sunbulaSyncStatusText');
+      if (el) {
+        el.textContent = 'الحالة: ' + msg;
+        el.style.color = isError ? '#b91c1c' : '#0f766e';
+      }
+    }
 
-    try {
-      await fetch(url, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
+    function getSyncUrl() {
+      const input = document.getElementById('syncUrl');
+      if (input && input.value && input.value.trim()) {
+        const cleaned = cleanUrl(input.value);
+        URL_KEYS.forEach((k) => localStorage.setItem(k, cleaned));
+        return cleaned;
+      }
+      for (const k of URL_KEYS) {
+        const v = cleanUrl(localStorage.getItem(k));
+        if (v) return v;
+      }
+      return '';
+    }
+
+    function getSyncEmail() {
+      const input = document.getElementById('driveEmail');
+      if (input && input.value && input.value.trim()) {
+        const email = input.value.trim().toLowerCase();
+        EMAIL_KEYS.forEach((k) => localStorage.setItem(k, email));
+        return email;
+      }
+      for (const k of EMAIL_KEYS) {
+        const v = (localStorage.getItem(k) || '').trim().toLowerCase();
+        if (v) return v;
+      }
+      return '';
+    }
+
+    function collectState() {
+      const direct = localStorage.getItem(STATE_KEY);
+      if (direct) {
+        try { return JSON.parse(direct); } catch (_) {}
+      }
+      const bag = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key) continue;
+        if (key.startsWith('__') || key.includes('sync_url')) continue;
+        bag[key] = localStorage.getItem(key);
+      }
+      return bag;
+    }
+
+    function applyState(stateObj) {
+      if (!stateObj || typeof stateObj !== 'object') return false;
+      const source =
+        stateObj.__fullLocalStorage && typeof stateObj.__fullLocalStorage === 'object'
+          ? stateObj.__fullLocalStorage
+          : stateObj;
+
+      Object.keys(source).forEach((key) => {
+        const val = source[key];
+        localStorage.setItem(key, typeof val === 'string' ? val : JSON.stringify(val));
       });
-      localStorage.setItem('sunbula_last_push_at', new Date().toISOString());
-      setStatus('تم إرسال طلب المزامنة السحابية (' + new Date().toLocaleTimeString('ar-IQ') + ').', false);
       return true;
-    } catch (err) {
-      const msg = err && err.message ? err.message : 'تعذر الاتصال';
-      setStatus('تعذر الإرسال المباشر من file://: ' + msg + ' — استخدم تصدير ملف نسخة.', true);
-      return false;
-    }
-  }
-
-  // سحب البيانات عبر GET؛ وإذا منعت صفحة file:// قراءة الاستجابة يوجّه للتصدير/الاستيراد بملف
-  async function pullFromCloud() {
-    const url = getSyncUrl();
-    const email = getSyncEmail();
-
-    if (!url || !url.includes('/exec')) {
-      setStatus('رابط المزامنة غير صالح؛ يجب أن ينتهي بـ /exec.', true);
-      alert('يرجى إدخال رابط المزامنة الصحيح الذي ينتهي بـ /exec أولاً.');
-      return false;
-    }
-    if (!email) {
-      setStatus('البريد الإلكتروني غير محدد للسحب.', true);
-      alert('يرجى إدخال البريد الإلكتروني أولاً.');
-      return false;
     }
 
-    setStatus('جاري سحب البيانات من السحابة...', false);
-    const sep = url.includes('?') ? '&' : '?';
-    const endpoint = `${url}${sep}email=${encodeURIComponent(email)}&_t=${Date.now()}`;
+    function refreshStatsAndInputs() {
+      const originEl = document.getElementById('sunbulaOriginBadge');
+      if (originEl) {
+        originEl.textContent = window.location.protocol ? window.location.protocol.replace(':', '') : 'local';
+      }
 
-    try {
-      const res = await fetch(endpoint, { method: 'GET', cache: 'no-store' });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const data = await res.json();
-      if (!data || !data.state) {
-        setStatus('الرابط متصل ولكن لا توجد بيانات مخزنة لهذا البريد بعد.', true);
-        alert('الرابط متصل ولكن لا توجد بيانات محفوظة لهذا البريد بعد.');
+      const emailInput = document.getElementById('driveEmail');
+      const urlInput = document.getElementById('syncUrl');
+
+      for (const k of EMAIL_KEYS) {
+        const val = localStorage.getItem(k);
+        if (val && emailInput) { emailInput.value = val; break; }
+      }
+      for (const k of URL_KEYS) {
+        const val = localStorage.getItem(k);
+        if (val && urlInput) { urlInput.value = val; break; }
+      }
+
+      const state = collectState();
+      const items = Array.isArray(state.items) ? state.items.length : 0;
+      const debts = Array.isArray(state.debts) ? state.debts.length : 0;
+      const rentals = Array.isArray(state.rentals) ? state.rentals.length : 0;
+
+      const elItems = document.getElementById('statItemsCount');
+      const elDebts = document.getElementById('statDebtsCount');
+      const elRentals = document.getElementById('statRentalsCount');
+      if (elItems) elItems.textContent = String(items);
+      if (elDebts) elDebts.textContent = String(debts);
+      if (elRentals) elRentals.textContent = String(rentals);
+    }
+
+    async function pushToCloud() {
+      const url = getSyncUrl();
+      const email = getSyncEmail();
+
+      if (!url || !url.includes('/exec')) {
+        setStatus('يرجى إدخال رابط المزامنة الصحيح الذي ينتهي بـ /exec أولاً.', true);
+        alert('يرجى التأكد من لصق رابط المزامنة الصحيح الذي ينتهي بـ /exec.');
         return false;
       }
-      applyState(data.state);
-      setStatus('تم سحب البيانات وتحديثها بنجاح.', false);
-      alert('تمت مزامنة البيانات بنجاح. سيتم إعادة تحميل التطبيق.');
-      location.reload();
-      return true;
-    } catch (err) {
-      const reason = err && err.message ? err.message : 'Network/CORS blocked on file://';
-      setStatus('تعذر السحب المباشر من file:// (' + reason + '). استخدم تصدير/استيراد ملف نسخة.', true);
-      alert('تعذر السحب من رابط المزامنة حالياً من صفحة file://.\nيمكنك نقل البيانات فوراً عبر "تصدير ملف نسخة" في الهاتف الأول و"استيراد ملف نسخة" في الهاتف الثاني.');
-      return false;
-    }
-  }
-
-  window.sunbulaSyncAction = function (mode) {
-    if (mode === 'pull') return pullFromCloud();
-    return pushToCloud();
-  };
-
-  window.sunbulaExportBackupFile = function () {
-    const email = getSyncEmail() || 'sunbula';
-    const exportPayload = {
-      app: 'Sunbula',
-      exportedAt: new Date().toISOString(),
-      email: email,
-      data: collectState()
-    };
-    const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `sunbula-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(link.href), 1500);
-    setStatus('تم إنشاء ملف النسخة الاحتياطية؛ أرسله إلى الهاتف الثاني ثم استورده.', false);
-  };
-
-  window.sunbulaImportBackupFile = function (event) {
-    const file = event && event.target && event.target.files && event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      try {
-        const parsed = JSON.parse(String(e.target.result || '{}'));
-        const payload = parsed && parsed.data ? parsed.data : parsed;
-        applyState({ __fullLocalStorage: payload });
-        alert('تم استيراد النسخة الاحتياطية بنجاح. سيتم إعادة تحميل التطبيق.');
-        location.reload();
-      } catch (_) {
-        alert('تعذر قراءة الملف؛ تأكد من اختيار ملف نسخة احتياطية JSON صحيح.');
-      } finally {
-        event.target.value = '';
+      if (!email) {
+        setStatus('يرجى إدخال البريد الإلكتروني أولاً قبل حفظ المزامنة.', true);
+        alert('يرجى إدخال البريد الإلكتروني أولاً.');
+        return false;
       }
-    };
-    reader.readAsText(file);
-  };
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', mountPanelInSettings);
-  } else {
-    mountPanelInSettings();
-  }
-})();
-</script>
-<!-- نهاية قسم المزامنة السحابية وتصدير/استيراد ملفات النسخ الاحتياطي -->
+      setStatus('جاري إرسال البيانات إلى السحابة...', false);
+      const payload = {
+        email: email,
+        updatedAt: Date.now(),
+        state: { __fullLocalStorage: collectState() }
+      };
+
+      try {
+        await fetch(url, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+        localStorage.setItem('sunbula_last_push_at', new Date().toISOString());
+        setStatus('تم إرسال طلب المزامنة السحابية (' + new Date().toLocaleTimeString('ar-IQ') + ').', false);
+        return true;
+      } catch (err) {
+        const msg = err && err.message ? err.message : 'تعذر الاتصال';
+        setStatus('تعذر الإرسال المباشر من ' + window.location.protocol + ': ' + msg + ' — استخدم تصدير ملف نسخة.', true);
+        return false;
+      }
+    }
+
+    async function pullFromCloud() {
+      const url = getSyncUrl();
+      const email = getSyncEmail();
+
+      if (!url || !url.includes('/exec')) {
+        setStatus('رابط المزامنة غير صالح؛ يجب أن ينتهي بـ /exec.', true);
+        alert('يرجى إدخال رابط المزامنة الصحيح الذي ينتهي بـ /exec أولاً.');
+        return false;
+      }
+      if (!email) {
+        setStatus('البريد الإلكتروني غير محدد للسحب.', true);
+        alert('يرجى إدخال البريد الإلكتروني أولاً.');
+        return false;
+      }
+
+      setStatus('جاري سحب البيانات من السحابة...', false);
+      const sep = url.includes('?') ? '&' : '?';
+      const endpoint = `${url}${sep}email=${encodeURIComponent(email)}&_t=${Date.now()}`;
+
+      try {
+        const res = await fetch(endpoint, { method: 'GET', cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        if (!data || !data.state) {
+          setStatus('الرابط متصل ولكن لا توجد بيانات مخزنة لهذا البريد بعد.', true);
+          alert('الرابط متصل ولكن لا توجد بيانات محفوظة لهذا البريد بعد.');
+          return false;
+        }
+        applyState(data.state);
+        setStatus('تم سحب البيانات وتحديثها بنجاح.', false);
+        alert('تمت مزامنة البيانات بنجاح. سيتم إعادة تحميل التطبيق.');
+        location.reload();
+        return true;
+      } catch (err) {
+        const reason = err && err.message ? err.message : 'Network/CORS blocked';
+        setStatus('تعذر السحب المباشر (' + reason + '). استخدم تصدير/استيراد ملف نسخة.', true);
+        alert('تعذر السحب من رابط المزامنة حالياً.\nيمكنك نقل البيانات فوراً عبر "تصدير ملف نسخة" في الهاتف الأول و"استيراد ملف نسخة" في الهاتف الثاني.');
+        return false;
+      }
+    }
+
+    window.sunbulaSyncAction = function (mode) {
+      if (mode === 'pull') return pullFromCloud();
+      return pushToCloud();
+    };
+
+    window.sunbulaExportBackupFile = function () {
+      const email = getSyncEmail() || 'sunbula';
+      const exportPayload = {
+        app: 'Sunbula',
+        exportedAt: new Date().toISOString(),
+        email: email,
+        data: collectState()
+      };
+      const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `sunbula-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(link.href), 1500);
+      setStatus('تم إنشاء ملف النسخة الاحتياطية؛ أرسله إلى الهاتف الثاني ثم استورده.', false);
+    };
+
+    window.sunbulaImportBackupFile = function (event) {
+      const file = event && event.target && event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          const parsed = JSON.parse(String(e.target.result || '{}'));
+          const payload = parsed && parsed.data ? parsed.data : parsed;
+          applyState({ __fullLocalStorage: payload });
+          alert('تم استيراد النسخة الاحتياطية بنجاح. سيتم إعادة تحميل التطبيق.');
+          location.reload();
+        } catch (_) {
+          alert('تعذر قراءة الملف؛ تأكد من اختيار ملف نسخة احتياطية JSON صحيح.');
+        } finally {
+          event.target.value = '';
+        }
+      };
+      reader.readAsText(file);
+    };
+
+    refreshStatsAndInputs();
+  })();
+  </script>
+</body>
+</html>
