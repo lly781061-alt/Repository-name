@@ -28,7 +28,7 @@ jobs:
       - name: Ensure Android project files
         run: flutter create --platforms=android .
 
-      - name: Update Android Gradle Plugin version
+      - name: Update Android Gradle Plugin & Gradle Wrapper
         run: |
           python3 -c '
           import glob, re
@@ -38,6 +38,12 @@ jobs:
               updated = re.sub(r"(com\.android\.application[\"'\'']?\s*version\s*[\"'\''])[^\"'\'']+", r"\g<1>8.5.0", content)
               with open(path, "w", encoding="utf-8") as f:
                   f.write(updated)
+          wrapper = "android/gradle/wrapper/gradle-wrapper.properties"
+          with open(wrapper, "r", encoding="utf-8") as f:
+              w_content = f.read()
+          w_updated = re.sub(r"gradle-[0-9.]+-(all|bin)\.zip", "gradle-8.7-all.zip", w_content)
+          with open(wrapper, "w", encoding="utf-8") as f:
+              f.write(w_updated)
           '
 
       - name: Install dependencies
